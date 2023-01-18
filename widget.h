@@ -24,34 +24,36 @@ class Widget : public QWidget {
     ~Widget();
 
    private slots:
+    void initialization();
     void on_clearButton_clicked();
     void on_refreshButton_clicked();
     void showTime();
     void recvMessage();
     void sendMessage();
     void on_sendButton_clicked();
-    void recvOptions(int);
-    void sendOptions(int);
+    void checkRecvFormatting(int);
+    void checkSendFormatting(int);
     void on_openButton_clicked();
     char AsciiToHex(char c);
-    void on_clearButton_recvCount_clicked();
-    void on_clearButton_sendCount_clicked();
+    void on_resetRecvCountButton_clicked();
+    void on_resetSendCountButton_clicked();
     void isSendPeriodChecked(int);
 
    private:
     Ui::Widget  *ui;
     QSerialPort *serialPort;
-    QTimer      *timerDisplayTime;
     QTimer      *timerCheckReceivedMessage;
     QTimer      *timerSendPeriodically;
     QStringList  comPortName;
     QString      portName;
     QStringList  splitedPortName;
     QString      currentTime;
+    QString      uiTransmitMessage;
     bool         isRecvConvertToHex;
     bool         isSendConvertToHex;
     int          recvCount;
     int          sendCount;
+    int          sendPeriod;
 };
 
 #endif  // WIDGET_H

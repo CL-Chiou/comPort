@@ -3,59 +3,63 @@
 #include "./ui_widget.h"
 
 Widget::Widget(QWidget *parent) : QWidget(parent), ui(new Ui::Widget) {
-    /* initiailize parameter */
+    ui->setupUi(this);
+    this->setWindowTitle("serialPort");
+    initialization();
+}
+
+Widget::~Widget() {
+    delete ui;
+}
+
+void Widget::initialization() {
+    /* Declaration and Definition */
+    QButtonGroup   *recvOptions = new QButtonGroup(this);
+    QButtonGroup   *sendOptions = new QButtonGroup(this);
+    QSerialPortInfo infoSerialPort;
+    QList<qint32>   baudRates = infoSerialPort.standardBaudRates();  // What baudrates does my computer support ?
+    QList<QString>  stringBaudRates;
+    quint8          indexBaudrate;
+    QTimer         *timerDisplayTime = new QTimer(this);
+    timerCheckReceivedMessage        = new QTimer(this);
+    timerSendPeriodically            = new QTimer(this);
+    serialPort                       = new QSerialPort(this);
+
+    /* Initialize parameters */
     isRecvConvertToHex = false;
     isSendConvertToHex = false;
     recvCount          = 0;
     sendCount          = 0;
 
-    ui->setupUi(this);
-    this->setWindowTitle("serialPort");
-
-    ui->label_recvCount->setText(QString::number(recvCount));
-    ui->label_sendCount->setText(QString::number(sendCount));
-
-    QButtonGroup *buttonGroup_RecvOptions = new QButtonGroup(this);
-    buttonGroup_RecvOptions->addButton(ui->isRecvASCII, 0);
-    buttonGroup_RecvOptions->addButton(ui->isRecvHEX, 1);
-    connect(buttonGroup_RecvOptions, SIGNAL(idClicked(int)), this, SLOT(recvOptions(int)));
+    /* ui layout */
+    recvOptions->addButton(ui->isRecvASCII, 0);
+    recvOptions->addButton(ui->isRecvHEX, 1);
+    sendOptions->addButton(ui->isSendASCII, 0);
+    sendOptions->addButton(ui->isSendHEX, 1);
+    ui->recvCountBox->setText(QString::number(recvCount));
+    ui->sendCountBox->setText(QString::number(sendCount));
     ui->isRecvASCII->setChecked(true);
-
-    QButtonGroup *buttonGroup_SendOptions = new QButtonGroup(this);
-    buttonGroup_SendOptions->addButton(ui->isSendASCII, 0);
-    buttonGroup_SendOptions->addButton(ui->isSendHEX, 1);
-    connect(buttonGroup_SendOptions, SIGNAL(idClicked(int)), this, SLOT(sendOptions(int)));
     ui->isSendASCII->setChecked(true);
+    ui->periodEdit->setValidator(new QIntValidator(0, __INT_MAX__, this));
 
-    connect(ui->checkBox_sendPeriod, SIGNAL(stateChanged(int)), this, SLOT(isSendPeriodChecked(int)));
-    ui->lineEdit_2->setValidator(new QIntValidator(0, __INT_MAX__, this));
-
-    timerDisplayTime          = new QTimer(this);
-    timerCheckReceivedMessage = new QTimer(this);
-    timerSendPeriodically     = new QTimer(this);
+    /* 連接 */
+    connect(recvOptions, SIGNAL(idClicked(int)), this, SLOT(checkRecvFormatting(int)));
+    connect(sendOptions, SIGNAL(idClicked(int)), this, SLOT(checkSendFormatting(int)));
+    connect(ui->isPeriod, SIGNAL(stateChanged(int)), this, SLOT(isSendPeriodChecked(int)));
     connect(timerDisplayTime, SIGNAL(timeout()), this, SLOT(showTime()));
     connect(timerCheckReceivedMessage, SIGNAL(timeout()), this, SLOT(recvMessage()));
-    connect(timerSendPeriodically, SIGNAL(timeout()), this, SLOT(on_sendButton_clicked()));
-
-    ui->textBrowser->document()->setTextWidth(5);
+    connect(timerSendPeriodically, SIGNAL(timeout()), this, SLOT(sendMessage()));
 
     showTime();
     timerDisplayTime->start(250);
 
-    /* 建立一個串列埠物件 */
-    serialPort = new QSerialPort(this);
-
-    /* 搜尋所有可用串列埠 */
+    /* Search all available serial ports */
     foreach (const QSerialPortInfo &inf0, QSerialPortInfo::availablePorts()) {
         comPortName << (inf0.portName() + " #" + inf0.description());
     }
-    ui->portnameBox->addItems(comPortName);
+    ui->portNameBox->addItems(comPortName);
 
-    // Baud Rate Ratios
-    QSerialPortInfo infoSerialPort;
-    QList<qint32>   baudRates = infoSerialPort.standardBaudRates();  // What baudrates does my computer support ?
-    QList<QString>  stringBaudRates;
-    quint8          indexBaudrate;
+    /* Show supported baud rates */
     for (int i = 0; i < baudRates.size(); i++) {
         if (baudRates.at(i) == 115200) {
             indexBaudrate = i;
@@ -67,17 +71,11 @@ Widget::Widget(QWidget *parent) : QWidget(parent), ui(new Ui::Widget) {
     ui->baudrateBox->setCurrentText(QString::number(baudRates.at(indexBaudrate)));
 }
 
-Widget::~Widget() {
-    delete ui;
-}
-
 void Widget::on_openButton_clicked() {
-    static bool isComPortOpen = false;
-    portName                  = ui->portnameBox->currentText();
-    splitedPortName           = portName.split(" ");
-    if (isComPortOpen == false) {
-        isComPortOpen = true;
-        ui->openButton->setText("Close");
+    static bool isOpen = false;
+    portName           = ui->portNameBox->currentText();
+    splitedPortName    = portName.split(" ");
+    if (isOpen == false) {
         /* 串列埠設定 */
         if (serialPort->isOpen() == false) {
             serialPort->setPortName(splitedPortName[0]);
@@ -126,41 +124,46 @@ void Widget::on_openButton_clicked() {
             }
         }
 
-        /* 開啟串列埠提示框 */
-        ui->textBrowser->setTextColor(Qt::black);  // Receieved message's color is black.
+        /* 開啟串列埠Hint框 */
+        ui->dataLogView->setTextColor(Qt::black);  // Receieved message's color is black.
         if (true == serialPort->open(QIODevice::ReadWrite)) {
-            (void)serialPort->readAll();
-            ui->textBrowser->append("---- 已開啟序列連接埠 " + splitedPortName[0] + " ----");
+            isOpen = true;
+            ui->openButton->setText("Close");
+            ui->dataLogView->append("---- Serial port " + splitedPortName[0] + " is open ----");
             timerCheckReceivedMessage->start(5);
         } else {
-            ui->textBrowser->append("**** 無法開啟序列連接埠 " + splitedPortName[0] + "。 ****");
+            ui->dataLogView->append("**** Unable to open serial port " + splitedPortName[0] + ". ****");
         }
     } else {
-        isComPortOpen = false;
+        isOpen = false;
         ui->openButton->setText("Open");
         if (serialPort->isOpen() == true) {
-            ui->textBrowser->setTextColor(Qt::black);  // Receieved message's color is black.
-            ui->textBrowser->append("---- 已關閉序列連接埠 " + splitedPortName[0] + " ----");
+            ui->dataLogView->setTextColor(Qt::black);  // Receieved message's color is black.
+            ui->dataLogView->append("---- Serial port " + splitedPortName[0] + " closed ----");
             serialPort->close();
             timerCheckReceivedMessage->stop();
+            timerSendPeriodically->stop();
+            ui->dataSendEdit->setEnabled(true);
+            ui->sendButton->setText("Send");
+            ui->isPeriod->setEnabled(true);
         }
     }
 }
 
 void Widget::on_refreshButton_clicked() {
     comPortName.clear();
-    ui->portnameBox->clear();
+    ui->portNameBox->clear();
     /* 搜尋所有可用串列埠 */
     foreach (const QSerialPortInfo &inf0, QSerialPortInfo::availablePorts()) {
         comPortName << (inf0.portName() + " #" + inf0.description());
     }
 
-    ui->portnameBox->addItems(comPortName);
+    ui->portNameBox->addItems(comPortName);
 }
 
 void Widget::showTime() {
     currentTime = QDateTime::currentDateTime().toString("yyyy-MM-dd dddd ap hh:mm:ss");
-    ui->timeString->setText(currentTime);
+    ui->currentTimeLabel->setText(currentTime);
 }
 
 void Widget::recvMessage() {
@@ -182,28 +185,21 @@ void Widget::recvMessage() {
         } else {
             consoleMessage = receivedMessage;
         }
-        ui->textBrowser->setTextColor(Qt::gray);
+        ui->dataLogView->setTextColor(Qt::gray);
         timeReceivedMessage = "[" + QDateTime::currentDateTime().toString("yyyy-MM-dd") + " " +
                               QDateTime::currentDateTime().toString("hh:mm:ss.zzz") + "]# RECV " +
                               ((isRecvConvertToHex == true) ? "HEX" : "ASCII");
-        ui->textBrowser->append(timeReceivedMessage);
+        ui->dataLogView->append(timeReceivedMessage);
 
-        ui->textBrowser->setTextColor(Qt::blue);
-        ui->textBrowser->append(consoleMessage);
+        ui->dataLogView->setTextColor(Qt::blue);
+        ui->dataLogView->append(consoleMessage);
         recvCount++;
-        ui->label_recvCount->setText(QString::number(recvCount));
+        ui->recvCountBox->setText(QString::number(recvCount));
     }
     prevBytesAvailable = serialPort->bytesAvailable();
 }
 
 void Widget::sendMessage() {
-}
-
-void Widget::on_clearButton_clicked() {
-    ui->textBrowser->clear();
-}
-
-void Widget::on_sendButton_clicked() {
     uint8_t    nibbleByte    = 0;
     uint8_t    countNextByte = 0;
     uint8_t    aCompleteByte = 0;
@@ -212,11 +208,11 @@ void Widget::on_sendButton_clicked() {
     QString    timeMessage = "[" + QDateTime::currentDateTime().toString("yyyy-MM-dd") + " " +
                           QDateTime::currentDateTime().toString("hh:mm:ss.zzz") + "]# SEND " +
                           ((isSendConvertToHex == true) ? "HEX" : "ASCII");
-    QString uiMessage = ui->lineEdit->text();
-    if (serialPort->isOpen() == true) {
+
+    if (uiTransmitMessage.size() != 0) {
         if (isSendConvertToHex == true) {
-            for (int index = 0; index < uiMessage.size(); index++) {
-                char c = uiMessage.toUtf8().at(index);
+            for (int index = 0; index < uiTransmitMessage.size(); index++) {
+                char c = uiTransmitMessage.toUtf8().at(index);
                 if ((' ' == c) || (',' == c)) {
                     if (countNextByte != 0) {
                         countNextByte = 0;
@@ -234,12 +230,11 @@ void Widget::on_sendButton_clicked() {
                         hexMessage.append(aCompleteByte);
                     } else {
                         aCompleteByte = nibbleByte;
-                        if (index == (uiMessage.size() - 1)) {
+                        if (index == (uiTransmitMessage.size() - 1)) {
                             hexMessage.append(aCompleteByte);
                         }
                     }
-                    qDebug("nibbleByte = 0x%02x", nibbleByte);
-                } else if ((index == (uiMessage.size() - 1)) || (';' == c)) {
+                } else if ((index == (uiTransmitMessage.size() - 1)) || (';' == c)) {
                     if (countNextByte != 0) {
                         hexMessage.append(nibbleByte);
                     }
@@ -256,31 +251,72 @@ void Widget::on_sendButton_clicked() {
                 }
             }
 
-            ui->textBrowser->setTextColor(Qt::gray);
-            ui->textBrowser->append(timeMessage);
-            ui->textBrowser->setTextColor(Qt::darkGreen);
-            ui->textBrowser->append(uiHexMessage);
-            serialPort->write(hexMessage);
-
+            if (hexMessage.size() != 0) {
+                ui->dataLogView->setTextColor(Qt::gray);
+                ui->dataLogView->append(timeMessage);
+                ui->dataLogView->setTextColor(Qt::darkGreen);
+                ui->dataLogView->append(uiHexMessage);
+                serialPort->write(hexMessage);
+                sendCount++;
+            } else {
+                QMessageBox::information(this, "Hint", "Data Send can only fill in [0-9], [a-f], [A-F]");
+            }
         } else {
-            ui->textBrowser->setTextColor(Qt::gray);
-            ui->textBrowser->append(timeMessage);
-            ui->textBrowser->setTextColor(Qt::darkGreen);
-            ui->textBrowser->append(uiMessage);
-            serialPort->write(uiMessage.toUtf8());
+            ui->dataLogView->setTextColor(Qt::gray);
+            ui->dataLogView->append(timeMessage);
+            ui->dataLogView->setTextColor(Qt::darkGreen);
+            ui->dataLogView->append(uiTransmitMessage);
+            serialPort->write(uiTransmitMessage.toUtf8());
+            sendCount++;
         }
-        sendCount++;
-        ui->label_sendCount->setText(QString::number(sendCount));
+        ui->sendCountBox->setText(QString::number(sendCount));
     } else {
-        if (ui->checkBox_sendPeriod->isChecked() == false) {
-            portName        = ui->portnameBox->currentText();
-            splitedPortName = portName.split(" ");
-            QMessageBox::information(this, "提示", "**** 尚未開啟序列連接埠 " + splitedPortName[0] + "。 ****");
-        }
+        timerSendPeriodically->stop();
+        ui->dataSendEdit->setEnabled(true);
+        ui->sendButton->setText("Send");
+        ui->isPeriod->setEnabled(true);
+        QMessageBox::information(this, "Hint", "Data Send field cannot be blank");
     }
 }
 
-void Widget::recvOptions(int buttonID) {
+void Widget::on_clearButton_clicked() {
+    ui->dataLogView->clear();
+}
+
+void Widget::on_sendButton_clicked() {
+    if (serialPort->isOpen() == true) {
+        uiTransmitMessage = ui->dataSendEdit->text();
+        if (ui->isPeriod->isChecked() == true) {
+            if (timerSendPeriodically->isActive() == false) {
+                ui->sendButton->setText("Stop");
+                ui->dataSendEdit->setEnabled(false);
+                ui->isPeriod->setEnabled(false);
+                timerSendPeriodically->start(sendPeriod);
+                sendMessage();
+            } else {
+                ui->sendButton->setText("Send");
+                ui->dataSendEdit->setEnabled(true);
+                ui->isPeriod->setEnabled(true);
+                timerSendPeriodically->stop();
+            }
+        } else {
+            if (ui->dataSendEdit->isEnabled() == false) {
+                ui->dataSendEdit->setEnabled(true);
+                ui->sendButton->setText("Send");
+            }
+            sendMessage();
+        }
+
+    } else {
+        portName        = ui->portNameBox->currentText();
+        splitedPortName = portName.split(" ");
+        QMessageBox::information(this, "Hint",
+                                 "**** The serial port " + splitedPortName[0] + " has not been opened. ****");
+    }
+}
+
+void Widget::checkRecvFormatting(int buttonID) {
+    qDebug(__FUNCTION__);
     switch (buttonID) {
         case 0:  // ASCII
             isRecvConvertToHex = false;
@@ -292,10 +328,10 @@ void Widget::recvOptions(int buttonID) {
         default:
             break;
     }
-    qDebug("RecvOptions checkedId = %d", buttonID);
 }
 
-void Widget::sendOptions(int buttonID) {
+void Widget::checkSendFormatting(int buttonID) {
+    qDebug(__FUNCTION__);
     switch (buttonID) {
         case 0:  // ASCII
             isSendConvertToHex = false;
@@ -307,7 +343,6 @@ void Widget::sendOptions(int buttonID) {
         default:
             break;
     }
-    qDebug("SendOptions checkedId = %d", buttonID);
 }
 
 char Widget::AsciiToHex(char c) {
@@ -322,26 +357,26 @@ char Widget::AsciiToHex(char c) {
     }
 }
 
-void Widget::on_clearButton_recvCount_clicked() {
+void Widget::on_resetRecvCountButton_clicked() {
     qDebug(__FUNCTION__);
     recvCount = 0;
-    ui->label_recvCount->setText(QString::number(recvCount));
+    ui->recvCountBox->setText(QString::number(recvCount));
 }
 
-void Widget::on_clearButton_sendCount_clicked() {
+void Widget::on_resetSendCountButton_clicked() {
     qDebug(__FUNCTION__);
     sendCount = 0;
-    ui->label_sendCount->setText(QString::number(sendCount));
+    ui->sendCountBox->setText(QString::number(sendCount));
 }
 
 void Widget::isSendPeriodChecked(int isChecked) {
     qDebug(__FUNCTION__);
     bool enable = (isChecked == 0);
-    ui->lineEdit_2->setEnabled(enable);
-    ui->lineEdit->setEnabled(enable);
+    ui->periodEdit->setEnabled(enable);
     if ((isChecked == 0) == true) {
+        sendPeriod = 0;
         timerSendPeriodically->stop();
     } else {
-        timerSendPeriodically->start(ui->lineEdit_2->text().toInt());
+        sendPeriod = ui->periodEdit->text().toInt();
     }
 }
