@@ -2,7 +2,12 @@
 
 #include "./ui_widget.h"
 
-Widget::Widget(QWidget *parent) : QWidget(parent), ui(new Ui::Widget) {
+Widget::Widget(QWidget *parent)
+    : QWidget(parent),
+      ui(new Ui::Widget),
+      timerCheckReceivedMessage(new QTimer(this)),
+      timerSendPeriodically(new QTimer(this)),
+      serialPort(new QSerialPort(this)) {
     ui->setupUi(this);
     this->setWindowTitle("serialPort");
     initialization();
@@ -21,16 +26,6 @@ void Widget::initialization() {
     QList<QString>  stringBaudRates;
     quint8          indexBaudrate;
     QTimer         *timerDisplayTime = new QTimer(this);
-    timerCheckReceivedMessage        = new QTimer(this);
-    timerSendPeriodically            = new QTimer(this);
-    serialPort                       = new QSerialPort(this);
-
-    /* Initialize parameters */
-    isRecvConvertToHex = false;
-    isSendConvertToHex = false;
-    recvCount          = 0;
-    sendCount          = 0;
-
     /* ui layout */
     recvOptions->addButton(ui->isRecvASCII, 0);
     recvOptions->addButton(ui->isRecvHEX, 1);
