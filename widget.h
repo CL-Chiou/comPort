@@ -6,15 +6,45 @@
 #include <QMessageBox>
 #include <QTime>
 #include <QTimer>
+#include <QValidator>
 #include <QWidget>
 #include <QtSerialPort/QSerialPort>
 #include <QtSerialPort/QSerialPortInfo>
+
+#include "qvalidator.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class Widget;
 }
 QT_END_NAMESPACE
+
+class HexIntegerValidator : public QValidator {
+    Q_OBJECT
+   public:
+    explicit HexIntegerValidator(QObject *parent = nullptr);
+
+    QValidator::State validate(QString &input, int &) const;
+
+    void setMaximum(uint maximum);
+
+   private:
+    uint m_maximum = 0;
+};
+
+class HexStringValidator : public QValidator {
+    Q_OBJECT
+
+   public:
+    explicit HexStringValidator(QObject *parent = nullptr);
+
+    QValidator::State validate(QString &input, int &pos) const;
+
+    void setMaxLength(int maxLength);
+
+   private:
+    int m_maxLength = 0;
+};
 
 class Widget : public QWidget {
     Q_OBJECT
@@ -24,18 +54,10 @@ class Widget : public QWidget {
     ~Widget();
 
    private slots:
-    void on_clearButton_clicked();
-    void on_refreshButton_clicked();
     void showTime();
     void recvMessage();
     void sendMessage();
-    void on_sendButton_clicked();
-    void checkRecvFormatting(int);
-    void checkSendFormatting(int);
-    void on_openButton_clicked();
-    void on_resetRecvCountButton_clicked();
-    void on_resetSendCountButton_clicked();
-    void isSendPeriodChecked(int);
+    void sendButton_clicked();
 
    private:
     Ui::Widget *ui;
