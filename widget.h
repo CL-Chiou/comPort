@@ -19,19 +19,6 @@ class Widget;
 }
 QT_END_NAMESPACE
 
-class HexIntegerValidator : public QValidator {
-    Q_OBJECT
-   public:
-    explicit HexIntegerValidator(QObject *parent = nullptr);
-
-    QValidator::State validate(QString &input, int &) const;
-
-    void setMaximum(uint maximum);
-
-   private:
-    uint m_maximum = 0;
-};
-
 class HexStringValidator : public QValidator {
     Q_OBJECT
 
@@ -39,11 +26,6 @@ class HexStringValidator : public QValidator {
     explicit HexStringValidator(QObject *parent = nullptr);
 
     QValidator::State validate(QString &input, int &pos) const;
-
-    void setMaxLength(int maxLength);
-
-   private:
-    int m_maxLength = 0;
 };
 
 class Widget : public QWidget {
@@ -54,30 +36,31 @@ class Widget : public QWidget {
     ~Widget();
 
    private slots:
-    void showTime();
-    void recvMessage();
-    void sendMessage();
+    void displayTime();
+    void receiveMessage();
+    void transmitMessage();
     void sendButton_clicked();
 
    private:
-    Ui::Widget *ui;
+    Ui::Widget *m_ui;
 
     void initialization();
-    char AsciiToHex(char c);
+    void openSerialPort();
 
-    QSerialPort *serialPort;
-    QTimer      *timerCheckReceivedMessage;
-    QTimer      *timerSendPeriodically;
-    QStringList  comPortName;
-    QString      portName;
-    QStringList  splitedPortName;
-    QString      currentTime;
-    QString      uiTransmitMessage;
-    bool         isRecvConvertToHex = false;
-    bool         isSendConvertToHex = false;
-    int          recvCount          = 0;
-    int          sendCount          = 0;
-    int          sendPeriod         = 0;
+    QSerialPort        *m_serialPort          = nullptr;
+    QTimer             *m_receiveMessageTimer = nullptr;
+    QTimer             *m_repetitionTimer     = nullptr;
+    QTimer             *m_displayTimeTimer    = nullptr;
+    HexStringValidator *m_hexStringValidator  = nullptr;
+
+    QString m_portName;
+    QString m_currentTime;
+
+    bool m_isRecvHexEnabled     = false;
+    bool m_isSendHexEnabled     = false;
+    int  m_numberPacketReceived = 0;
+    int  m_numberPacketWritten  = 0;
+    int  m_repetition_ms        = 0;
 };
 
 #endif  // WIDGET_H
