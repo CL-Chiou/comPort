@@ -115,7 +115,7 @@
              <number>0</number>
             </property>
             <item>
-             <widget class="QLabel" name="serialportLabel">
+             <widget class="QLabel" name="serialPortLabel">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
                 <horstretch>0</horstretch>
@@ -200,7 +200,7 @@
              <enum>QLayout::SetFixedSize</enum>
             </property>
             <item>
-             <widget class="QComboBox" name="portNameComboxBox">
+             <widget class="QComboBox" name="serialPortComboxBox">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -301,19 +301,6 @@
              <enum>QLayout::SetFixedSize</enum>
             </property>
             <item>
-             <widget class="QPushButton" name="runPushButton">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text">
-               <string>Open</string>
-              </property>
-             </widget>
-            </item>
-            <item>
              <widget class="QPushButton" name="refreshPushButton">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -323,6 +310,19 @@
               </property>
               <property name="text">
                <string>Refresh Ports</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="runPushButton">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Open</string>
               </property>
              </widget>
             </item>
@@ -902,7 +902,7 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="sendOptionsButtonGroup"/>
   <buttongroup name="recvOptionsButtonGroup"/>
+  <buttongroup name="sendOptionsButtonGroup"/>
  </buttongroups>
 </ui>

@@ -151,11 +151,11 @@ void Widget::initialization() {
 
     // create connection
     connect(m_ui->refreshPushButton, &QPushButton::clicked, this, [this]() {
-        m_ui->portNameComboxBox->clear();
+        m_ui->serialPortComboxBox->clear();
         // Search all available serial ports
         const auto infos = QSerialPortInfo::availablePorts();
         for (const QSerialPortInfo &info : infos)
-            m_ui->portNameComboxBox->addItem(info.portName() + " #" + info.description());
+            m_ui->serialPortComboxBox->addItem(info.portName() + " #" + info.description());
 
         qDebug("refreshPushButton is Clicked !");
     });
@@ -226,7 +226,7 @@ void Widget::initialization() {
     // Search all available serial ports
     const auto infos = QSerialPortInfo::availablePorts();
     for (const QSerialPortInfo &info : infos)
-        m_ui->portNameComboxBox->addItem(info.portName() + " #" + info.description());
+        m_ui->serialPortComboxBox->addItem(info.portName() + " #" + info.description());
 
     // Show supported baud rates
     const auto baudRates     = QSerialPortInfo::standardBaudRates();
@@ -285,7 +285,7 @@ void Widget::receiveMessage() {
 
 void Widget::openSerialPort() {
     static bool isOpened = false;
-    m_portName           = m_ui->portNameComboxBox->currentText();
+    m_portName           = m_ui->serialPortComboxBox->currentText();
     if (isOpened == false) {
         // Serial Port Settings
         if (m_serialPort->isOpen() == false) {
@@ -365,6 +365,13 @@ void Widget::openSerialPort() {
             isOpened  = true;
             m_ui->runPushButton->setText("Close");
             m_ui->dataLogTextBrowser->append(s);
+            m_ui->serialPortComboxBox->setEnabled(false);
+            m_ui->baudrateComboBox->setEnabled(false);
+            m_ui->databitsComboBox->setEnabled(false);
+            m_ui->stopbitsComboBox->setEnabled(false);
+            m_ui->parityComboBox->setEnabled(false);
+            m_ui->flowControlComboBox->setEnabled(false);
+            m_ui->refreshPushButton->setAttribute(Qt::WA_TransparentForMouseEvents);
             m_receiveMessageTimer->start(2);
         } else {
             QString s = tr("**** Unable to open serial port %1. ****").arg(m_portName.split(" ")[0]);
@@ -380,6 +387,13 @@ void Widget::openSerialPort() {
             m_ui->sendPushButton->setText("Send");
             m_ui->dataSendLineEdit->setEnabled(true);
             m_ui->isPeriodCheckBox->setEnabled(true);
+            m_ui->serialPortComboxBox->setEnabled(true);
+            m_ui->baudrateComboBox->setEnabled(true);
+            m_ui->databitsComboBox->setEnabled(true);
+            m_ui->stopbitsComboBox->setEnabled(true);
+            m_ui->parityComboBox->setEnabled(true);
+            m_ui->flowControlComboBox->setEnabled(true);
+            m_ui->refreshPushButton->setAttribute(Qt::WA_TransparentForMouseEvents, false);
             m_serialPort->close();
             m_repetitionTimer->stop();
             m_receiveMessageTimer->stop();
@@ -445,7 +459,7 @@ void Widget::sendButton_clicked() {
 
     } else {
         QString s  = tr("**** The serial port %1 has not been opened. ****").arg(m_portName.split(" ")[0]);
-        m_portName = m_ui->portNameComboxBox->currentText();
+        m_portName = m_ui->serialPortComboxBox->currentText();
         QMessageBox::information(this, "Hint", s);
     }
 }
