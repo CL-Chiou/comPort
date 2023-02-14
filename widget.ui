@@ -207,6 +207,12 @@
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
+              <property name="sizeAdjustPolicy">
+               <enum>QComboBox::AdjustToMinimumContentsLengthWithIcon</enum>
+              </property>
+              <property name="minimumContentsLength">
+               <number>6</number>
+              </property>
              </widget>
             </item>
             <item>
@@ -222,6 +228,12 @@
               </property>
               <property name="currentIndex">
                <number>-1</number>
+              </property>
+              <property name="sizeAdjustPolicy">
+               <enum>QComboBox::AdjustToMinimumContentsLengthWithIcon</enum>
+              </property>
+              <property name="minimumContentsLength">
+               <number>6</number>
               </property>
              </widget>
             </item>
@@ -239,6 +251,12 @@
               <property name="currentIndex">
                <number>-1</number>
               </property>
+              <property name="sizeAdjustPolicy">
+               <enum>QComboBox::AdjustToMinimumContentsLengthWithIcon</enum>
+              </property>
+              <property name="minimumContentsLength">
+               <number>6</number>
+              </property>
              </widget>
             </item>
             <item>
@@ -254,6 +272,12 @@
               </property>
               <property name="currentIndex">
                <number>-1</number>
+              </property>
+              <property name="sizeAdjustPolicy">
+               <enum>QComboBox::AdjustToMinimumContentsLengthWithIcon</enum>
+              </property>
+              <property name="minimumContentsLength">
+               <number>6</number>
               </property>
              </widget>
             </item>
@@ -271,6 +295,12 @@
               <property name="currentIndex">
                <number>-1</number>
               </property>
+              <property name="sizeAdjustPolicy">
+               <enum>QComboBox::AdjustToMinimumContentsLengthWithIcon</enum>
+              </property>
+              <property name="minimumContentsLength">
+               <number>6</number>
+              </property>
              </widget>
             </item>
             <item>
@@ -283,6 +313,12 @@
               </property>
               <property name="currentText">
                <string/>
+              </property>
+              <property name="sizeAdjustPolicy">
+               <enum>QComboBox::AdjustToMinimumContentsLengthWithIcon</enum>
+              </property>
+              <property name="minimumContentsLength">
+               <number>6</number>
               </property>
              </widget>
             </item>
@@ -902,7 +938,7 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="recvOptionsButtonGroup"/>
   <buttongroup name="sendOptionsButtonGroup"/>
+  <buttongroup name="recvOptionsButtonGroup"/>
  </buttongroups>
 </ui>

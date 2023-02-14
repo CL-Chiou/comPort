@@ -1,6 +1,7 @@
 #ifndef WIDGET_H
 #define WIDGET_H
 
+#include <QAbstractitemView>
 #include <QButtonGroup>
 #include <QDebug>
 #include <QMessageBox>
@@ -10,8 +11,6 @@
 #include <QWidget>
 #include <QtSerialPort/QSerialPort>
 #include <QtSerialPort/QSerialPortInfo>
-
-#include "qvalidator.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -46,6 +45,7 @@ class Widget : public QWidget {
 
     void initialization();
     void openSerialPort();
+    void adjustComboBoxViewWidth(QComboBox *);
 
     QSerialPort        *m_serialPort          = nullptr;
     QTimer             *m_receiveMessageTimer = nullptr;

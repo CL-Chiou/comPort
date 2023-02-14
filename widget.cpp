@@ -18,6 +18,9 @@ Widget::Widget(QWidget *parent)
     m_hexStringValidator = new HexStringValidator(this);
 
     initialization();
+
+    adjustComboBoxViewWidth(m_ui->serialPortComboxBox);
+    adjustComboBoxViewWidth(m_ui->flowControlComboBox);
 }
 
 Widget::~Widget() {
@@ -216,6 +219,7 @@ void Widget::initialization() {
         }
         sendButton_clicked();
     });
+
     connect(m_displayTimeTimer, &QTimer::timeout, this, &Widget::displayTime);
     connect(m_receiveMessageTimer, &QTimer::timeout, this, &Widget::receiveMessage);
     connect(m_repetitionTimer, &QTimer::timeout, this, &Widget::transmitMessage);
@@ -462,4 +466,19 @@ void Widget::sendButton_clicked() {
         m_portName = m_ui->serialPortComboxBox->currentText();
         QMessageBox::information(this, "Hint", s);
     }
+}
+
+void Widget::adjustComboBoxViewWidth(QComboBox *combox) {
+    QFontMetrics fm(combox->font());
+    QRect        rect;
+    int          maxLen = 0;
+    for (size_t i = 0; i < combox->count(); i++) {
+        rect = fm.boundingRect(combox->itemText(i));
+        if (maxLen < rect.width()) {
+            maxLen = rect.width();
+        }
+    }
+    maxLen *= 1.2;
+    int w = qMax(maxLen, combox->width());
+    combox->view()->setFixedWidth(w);
 }
