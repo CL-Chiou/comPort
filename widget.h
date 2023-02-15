@@ -3,8 +3,10 @@
 
 #include <QAbstractitemView>
 #include <QButtonGroup>
+#include <QComboBox>
 #include <QDebug>
 #include <QMessageBox>
+#include <QScrollBar>
 #include <QTime>
 #include <QTimer>
 #include <QValidator>
@@ -58,6 +60,7 @@ class Widget : public QWidget {
 
     bool m_isRecvHexEnabled     = false;
     bool m_isSendHexEnabled     = false;
+    bool m_isFreezeWindows      = false;
     int  m_numberPacketReceived = 0;
     int  m_numberPacketWritten  = 0;
     int  m_repetition_ms        = 0;

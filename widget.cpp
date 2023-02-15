@@ -159,7 +159,8 @@ void Widget::initialization() {
         const auto infos = QSerialPortInfo::availablePorts();
         for (const QSerialPortInfo &info : infos)
             m_ui->serialPortComboxBox->addItem(info.portName() + " #" + info.description());
-
+        adjustComboBoxViewWidth(m_ui->serialPortComboxBox);
+        adjustComboBoxViewWidth(m_ui->flowControlComboBox);
         qDebug("refreshPushButton is Clicked !");
     });
     connect(m_ui->clearPushButton, &QPushButton::clicked, this, [this]() {
@@ -219,6 +220,22 @@ void Widget::initialization() {
         }
         sendButton_clicked();
     });
+    connect(m_ui->endCursorButton, &QPushButton::clicked, [this]() {
+        m_ui->dataLogTextBrowser->moveCursor(QTextCursor::End);
+        connect(m_ui->dataLogTextBrowser, &QTextBrowser::textChanged,
+                [this]() { m_ui->dataLogTextBrowser->moveCursor(QTextCursor::End); });
+    });
+    connect(m_ui->dataLogTextBrowser->verticalScrollBar(), &QScrollBar::valueChanged, [this](int value) {
+        static int temp = value;
+        if (value < temp) {
+            disconnect(m_ui->dataLogTextBrowser, &QTextBrowser::textChanged, 0, 0);
+        }
+        temp = value;
+    });
+    connect(m_ui->freezeWindowsBox, &QCheckBox::clicked, [this](bool isChecked) {
+        m_ui->dataLogTextBrowser->setEnabled(!isChecked);
+        m_isFreezeWindows = isChecked;
+    });
 
     connect(m_displayTimeTimer, &QTimer::timeout, this, &Widget::displayTime);
     connect(m_receiveMessageTimer, &QTimer::timeout, this, &Widget::receiveMessage);
@@ -271,16 +288,20 @@ void Widget::receiveMessage() {
 
     if ((m_serialPort->bytesAvailable() == prev) && (prev != 0)) {
         data = m_serialPort->readAll();
+
         if (m_isRecvHexEnabled == true) {
             dataAcsii = insertSpaceBetweenByte(data);
         } else {
             dataAcsii = data;
         }
-        m_ui->dataLogTextBrowser->setTextColor(Qt::gray);
-        m_ui->dataLogTextBrowser->append(timeMessage);
 
-        m_ui->dataLogTextBrowser->setTextColor(Qt::blue);
-        m_ui->dataLogTextBrowser->append(dataAcsii);
+        if (m_isFreezeWindows == false) {
+            m_ui->dataLogTextBrowser->setTextColor(Qt::gray);
+            m_ui->dataLogTextBrowser->append(timeMessage);
+
+            m_ui->dataLogTextBrowser->setTextColor(Qt::blue);
+            m_ui->dataLogTextBrowser->append(dataAcsii);
+        }
 
         m_ui->recvCount->setText(QString::number(++m_numberPacketReceived));
     }
