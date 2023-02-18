@@ -157,8 +157,14 @@ void Widget::initialization() {
         m_ui->serialPortComboxBox->clear();
         // Search all available serial ports
         const auto infos = QSerialPortInfo::availablePorts();
-        for (const QSerialPortInfo &info : infos)
+        for (const QSerialPortInfo &info : infos) {
             m_ui->serialPortComboxBox->addItem(info.portName() + " #" + info.description());
+            qDebug("portName = %s", info.portName().toStdString().c_str());
+            qDebug("manufacturer = %s", info.manufacturer().toStdString().c_str());
+            qDebug("serialNumber = %s", info.serialNumber().toStdString().c_str());
+            qDebug("vendorIdentifier = 0x%04x", info.vendorIdentifier());
+            qDebug("productIdentifier = 0x%04x\r\n", info.productIdentifier());
+        }
         adjustComboBoxViewWidth(m_ui->serialPortComboxBox);
         adjustComboBoxViewWidth(m_ui->flowControlComboBox);
         qDebug("refreshPushButton is Clicked !");
@@ -226,15 +232,22 @@ void Widget::initialization() {
                 [this]() { m_ui->dataLogTextBrowser->moveCursor(QTextCursor::End); });
     });
     connect(m_ui->dataLogTextBrowser->verticalScrollBar(), &QScrollBar::valueChanged, [this](int value) {
-        static int temp = value;
-        if (value < temp) {
+        static int temp  = value;
+        static int temp1 = this->height();
+        if ((value < temp) && (temp1 == this->height())) {
             disconnect(m_ui->dataLogTextBrowser, &QTextBrowser::textChanged, 0, 0);
         }
-        temp = value;
+        temp  = value;
+        temp1 = this->height();
     });
     connect(m_ui->freezeWindowsBox, &QCheckBox::clicked, [this](bool isChecked) {
         m_ui->dataLogTextBrowser->setEnabled(!isChecked);
         m_isFreezeWindows = isChecked;
+    });
+
+    connect(m_serialPort, &QSerialPort::errorOccurred, [this](QSerialPort::SerialPortError error) {
+        // this is called when a serial communication error occurs
+        qDebug() << "An error occured: " << error;
     });
 
     connect(m_displayTimeTimer, &QTimer::timeout, this, &Widget::displayTime);
@@ -388,6 +401,10 @@ void Widget::openSerialPort() {
         if (m_serialPort->open(QIODevice::ReadWrite) == true) {
             QString s = tr("---- Serial port %1 is open ----").arg(m_portName.split(" ")[0]);
             isOpened  = true;
+            if (m_serialPort->isDataTerminalReady() == false) {
+                m_serialPort->setDataTerminalReady(true);
+            }
+
             m_ui->runPushButton->setText("Close");
             m_ui->dataLogTextBrowser->append(s);
             m_ui->serialPortComboxBox->setEnabled(false);
@@ -398,6 +415,20 @@ void Widget::openSerialPort() {
             m_ui->flowControlComboBox->setEnabled(false);
             m_ui->refreshPushButton->setAttribute(Qt::WA_TransparentForMouseEvents);
             m_receiveMessageTimer->start(2);
+
+            qDebug("m_serialPort->portName() = %s", m_serialPort->portName().toStdString().c_str());
+            qDebug("m_serialPort->error() = 0x%d", m_serialPort->error());
+
+            qDebug("m_serialPort->isDataTerminalReady() = 0x%d", m_serialPort->isDataTerminalReady());
+            qDebug("m_serialPort->isBreakEnabled() = 0x%d", m_serialPort->isBreakEnabled());
+            qDebug("m_serialPort->isRequestToSend() = 0x%d", m_serialPort->isRequestToSend());
+            qDebug("m_serialPort->isSequential() = 0x%d", m_serialPort->isSequential());
+            qDebug("m_serialPort->isTextModeEnabled() = 0x%d", m_serialPort->isTextModeEnabled());
+            qDebug("m_serialPort->isOpen() = 0x%d", m_serialPort->isOpen());
+            qDebug("m_serialPort->isQuickItemType() = 0x%d", m_serialPort->isQuickItemType());
+            qDebug("m_serialPort->isTextModeEnabled() = 0x%d", m_serialPort->isTextModeEnabled());
+            qDebug("m_serialPort->isReadable() = 0x%d", m_serialPort->isReadable());
+            qDebug("m_serialPort->isWritable() = 0x%d", m_serialPort->isWritable());
         } else {
             QString s = tr("**** Unable to open serial port %1. ****").arg(m_portName.split(" ")[0]);
             m_ui->dataLogTextBrowser->append(s);
